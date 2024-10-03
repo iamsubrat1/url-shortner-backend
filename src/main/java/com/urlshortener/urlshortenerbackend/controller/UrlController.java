@@ -16,8 +16,13 @@ import java.io.IOException;
 @RequestMapping("/api/url")
 public class UrlController {
 
+
+    final private UrlService urlService;
+
     @Autowired
-    private UrlService urlService;
+    public UrlController(UrlService urlService) {
+        this.urlService = urlService;
+    }
 
     @PostMapping("/shorten")
     public ResponseEntity<String> shortenUrl(@RequestBody String longUrl) {
@@ -34,11 +39,12 @@ public class UrlController {
             return ResponseEntity.notFound().build();
         }
     }
+
     @DeleteMapping("/{shortUrl}")
-    public ResponseEntity<?> deleteShortUrl(@PathVariable String shortUrl, HttpServletResponse response)throws IOException {
+    public ResponseEntity<?> deleteShortUrl(@PathVariable String shortUrl, HttpServletResponse response) throws IOException {
         Url urlToDelete = urlService.getUrlByShortUrl(shortUrl);
         if (urlToDelete == null) {
-            ErrorResponseDto errorResponse = new ErrorResponseDto("404","URL does not exist");
+            ErrorResponseDto errorResponse = new ErrorResponseDto("404", "URL does not exist");
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(errorResponse);
         }
