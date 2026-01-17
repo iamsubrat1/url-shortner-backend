@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: url-shortener-backend
+
+  profiles:
+    active: dev
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    com.urlshortener: DEBUG
