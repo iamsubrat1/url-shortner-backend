@@ -24,39 +24,60 @@ public class UrlShortenerService {
     }
 
     /**
-     * Creates or returns an existing short code for a long URL.
-     * Ensures idempotency and collision safety.
+     * Creates a short URL with optional custom code and expiration.
+     * Ensures idempotency, validation, and collision safety.
      */
-    public String createShortUrl(String longUrl) {
+    public Url createShortUrl(String longUrl, String customCode, LocalDateTime expiresAt) {
 
-        Optional<Url> existing = urlMappingRepository.findByLongUrl(longUrl);
-        if (existing.isPresent()) {
-            return existing.get().getShortUrl();
+        // Validate expiration
+        if (expiresAt != null && expiresAt.isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Expiration time must be in the future");
         }
 
-        String shortCode = generateUniqueShortCode();
+        // Handle custom short code
+        String shortCode;
+        if (customCode != null && !customCode.isBlank()) {
+            if (urlMappingRepository.existsByShortUrl(customCode)) {
+                throw new IllegalStateException("Custom short code already exists");
+            }
+            shortCode = customCode;
+        } else {
+            // Idempotency only when system generates code
+            Optional<Url> existing = urlMappingRepository.findByLongUrl(longUrl);
+            if (existing.isPresent()) {
+                return existing.get();
+            }
+            shortCode = generateUniqueShortCode();
+        }
 
         Url url = new Url();
         url.setLongUrl(longUrl);
         url.setShortUrl(shortCode);
         url.setCreatedAt(LocalDateTime.now());
+        url.setExpiresAt(expiresAt);
 
-        urlMappingRepository.save(url);
-        return shortCode;
+        return urlMappingRepository.save(url);
     }
 
     /**
-     * Resolves a short code to original URL.
+     * Resolves short code to original URL.
+     * Enforces expiration rules.
      */
     public String resolveShortUrl(String shortCode) {
-        return urlMappingRepository.findByShortUrl(shortCode)
-                .map(Url::getLongUrl)
+        Url url = urlMappingRepository.findByShortUrl(shortCode)
                 .orElseThrow(() ->
                         new IllegalArgumentException("Short URL not found"));
+
+        if (url.getExpiresAt() != null &&
+                url.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("Short URL has expired");
+        }
+
+        return url.getLongUrl();
     }
 
     /**
-     * Deletes a short URL.
+     * Deletes a short URL safely.
      */
     @Transactional
     public void deleteShortUrl(String shortCode) {

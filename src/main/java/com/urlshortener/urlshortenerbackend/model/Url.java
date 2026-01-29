@@ -21,4 +21,7 @@ public class Url {
 
     @Column(name = "created_at", columnDefinition = "DATETIME")
     private LocalDateTime createdAt;
+
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
 }

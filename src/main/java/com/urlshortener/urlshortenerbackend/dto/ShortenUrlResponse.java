@@ -1,6 +1,10 @@
 package com.urlshortener.urlshortenerbackend.dto;
 
-public record ShortenUrlResponse(String shortCode) {
+import java.time.LocalDateTime;
+
+public record ShortenUrlResponse(String shortCode,
+                                 LocalDateTime expiresAt,
+                                 LocalDateTime createdAt) {
 
 }
 
