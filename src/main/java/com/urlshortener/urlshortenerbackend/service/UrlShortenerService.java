@@ -1,5 +1,8 @@
 package com.urlshortener.urlshortenerbackend.service;
 
+import com.urlshortener.urlshortenerbackend.exception.CustomShortCodeAlreadyExistsException;
+import com.urlshortener.urlshortenerbackend.exception.ShortUrlNotFoundException;
+import com.urlshortener.urlshortenerbackend.exception.UrlExpiredException;
 import com.urlshortener.urlshortenerbackend.model.Url;
 import com.urlshortener.urlshortenerbackend.repository.UrlMappingRepository;
 import jakarta.transaction.Transactional;
@@ -38,7 +41,7 @@ public class UrlShortenerService {
         String shortCode;
         if (customCode != null && !customCode.isBlank()) {
             if (urlMappingRepository.existsByShortUrl(customCode)) {
-                throw new IllegalStateException("Custom short code already exists");
+                throw new CustomShortCodeAlreadyExistsException("Custom short code already exists");
             }
             shortCode = customCode;
         } else {
@@ -66,11 +69,11 @@ public class UrlShortenerService {
     public String resolveShortUrl(String shortCode) {
         Url url = urlMappingRepository.findByShortUrl(shortCode)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("Short URL not found"));
+                        new ShortUrlNotFoundException("Short URL not found"));
 
         if (url.getExpiresAt() != null &&
                 url.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new IllegalStateException("Short URL has expired");
+            throw new UrlExpiredException("Short URL has expired");
         }
 
         return url.getLongUrl();
