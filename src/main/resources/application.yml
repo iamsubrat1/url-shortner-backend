@@ -22,5 +22,14 @@ logging:
     com.urlshortener: DEBUG
 
 rate-limit:
-  capacity: 2
+  capacity: 3
   window-seconds: 60
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
