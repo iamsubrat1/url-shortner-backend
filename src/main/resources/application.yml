@@ -20,3 +20,7 @@ logging:
   level:
     root: INFO
     com.urlshortener: DEBUG
+
+rate-limit:
+  capacity: 2
+  window-seconds: 60
