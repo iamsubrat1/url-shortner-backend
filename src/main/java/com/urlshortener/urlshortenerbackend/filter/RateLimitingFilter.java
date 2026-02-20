@@ -1,6 +1,5 @@
 package com.urlshortener.urlshortenerbackend.filter;
 
-import com.urlshortener.urlshortenerbackend.exception.GlobalExceptionHandler;
 import com.urlshortener.urlshortenerbackend.exception.RateLimitExceededException;
 import com.urlshortener.urlshortenerbackend.ratelimiter.DistributedRateLimiter;
 import jakarta.servlet.FilterChain;
@@ -8,6 +7,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
@@ -30,8 +31,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
         try {
 
-            String clientIp = request.getRemoteAddr();
-            distributedRateLimiter.validateRateLimit(clientIp);
+            String userKey = resolveUserKey();
+            distributedRateLimiter.validateRateLimit(userKey);
 
             filterChain.doFilter(request, response);
 
@@ -46,14 +47,19 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
     }
 
-    private String extractClientIp(HttpServletRequest request) {
+    private String resolveUserKey() {
 
-        String forwarded = request.getHeader("X-Forwarded-For");
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
 
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new IllegalStateException("Authentication required for rate limiting");
         }
 
-        return request.getRemoteAddr();
+        String username = authentication.getName();
+
+        return "user:" + username;
     }
+
+
 }
